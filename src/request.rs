@@ -1,13 +1,13 @@
 use std::fmt;
 use std::io::Read;
 use std::result::Result;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time;
 
 use qstring::QString;
 use url::{form_urlencoded, Url};
 
-use crate::agent::{self, Agent, AgentState};
+use crate::agent::{self, Agent};
 use crate::body::{Payload, SizedReader};
 use crate::error::Error;
 use crate::header::{self, Header};
@@ -29,7 +29,7 @@ use super::SerdeValue;
 /// ```
 #[derive(Clone, Default)]
 pub struct Request {
-    pub(crate) agent: Arc<Mutex<AgentState>>,
+    pub(crate) agent: Agent,
 
     // via agent
     pub(crate) method: String,
@@ -70,7 +70,7 @@ impl fmt::Debug for Request {
 impl Request {
     pub(crate) fn new(agent: &Agent, method: String, url: String) -> Request {
         Request {
-            agent: Arc::clone(&agent.state),
+            agent: agent.clone(),
             method,
             url,
             headers: agent.headers.clone(),

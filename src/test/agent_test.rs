@@ -80,7 +80,7 @@ fn connection_reuse() {
     resp.into_string().unwrap();
 
     {
-        let mut state = agent.state.lock().unwrap();
+        let mut state = agent.inner.state.lock().unwrap();
         assert!(state.pool().len() > 0);
     }
 

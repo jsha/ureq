@@ -3,7 +3,7 @@ use cookie::{Cookie, CookieJar};
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use crate::header::{self, Header};
+use crate::header::Header;
 use crate::pool::ConnectionPool;
 use crate::request::Request;
 
@@ -39,8 +39,13 @@ use crate::request::Request;
 pub struct Agent {
     /// Copied into each request of this agent.
     pub(crate) headers: Vec<Header>,
+    pub(crate) inner: Arc<AgentInner>,
+}
+
+#[derive(Debug, Default)]
+pub struct AgentInner {
     /// Reused agent state for repeated requests from this agent.
-    pub(crate) state: Arc<Mutex<AgentState>>,
+    pub(crate) state: Mutex<AgentState>,
 }
 
 /// Container of the state
@@ -89,7 +94,9 @@ impl Agent {
     pub fn build(&self) -> Self {
         Agent {
             headers: self.headers.clone(),
-            state: Arc::new(Mutex::new(AgentState::new())),
+            inner: Arc::new(AgentInner {
+                state: Mutex::new(AgentState::new()),
+            }),
         }
     }
 
@@ -112,7 +119,7 @@ impl Agent {
     ///  }
     /// ```
     pub fn set(&mut self, header: &str, value: &str) -> &mut Agent {
-        header::add_header(&mut self.headers, Header::new(header, value));
+        self.headers.push(Header::new(header, value));
         self
     }
 
@@ -175,7 +182,7 @@ impl Agent {
     /// agent.set_max_pool_connections(200);
     /// ```
     pub fn set_max_pool_connections(&self, max_connections: usize) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.inner.state.lock().unwrap();
         state.pool.set_max_idle_connections(max_connections);
     }
 
@@ -188,7 +195,7 @@ impl Agent {
     /// agent.set_max_pool_connections_per_host(10);
     /// ```
     pub fn set_max_pool_connections_per_host(&self, max_connections: usize) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.inner.state.lock().unwrap();
         state
             .pool
             .set_max_idle_connections_per_host(max_connections);
@@ -207,7 +214,7 @@ impl Agent {
     /// ```
     #[cfg(feature = "cookie")]
     pub fn cookie(&self, name: &str) -> Option<Cookie<'static>> {
-        let state = self.state.lock().unwrap();
+        let state = self.inner.state.lock().unwrap();
         state.jar.get(name).cloned()
     }
 
@@ -221,7 +228,7 @@ impl Agent {
     /// ```
     #[cfg(feature = "cookie")]
     pub fn set_cookie(&self, cookie: Cookie<'static>) {
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.inner.state.lock().unwrap();
         state.jar.add_original(cookie);
     }
 
@@ -310,7 +317,7 @@ mod tests {
         reader.read_to_end(&mut buf).unwrap();
 
         fn poolsize(agent: &Agent) -> usize {
-            let mut state = agent.state.lock().unwrap();
+            let mut state = agent.inner.state.lock().unwrap();
             state.pool().len()
         }
         assert_eq!(poolsize(&agent), 1);

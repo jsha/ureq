@@ -1,5 +1,4 @@
 use std::io::{Result as IoResult, Write};
-use std::sync::{Arc, Mutex};
 use std::time;
 
 use qstring::QString;
@@ -8,7 +7,7 @@ use url::Url;
 #[cfg(feature = "cookie")]
 use cookie::{Cookie, CookieJar};
 
-use crate::agent::AgentState;
+use crate::agent::Agent;
 use crate::body::{self, Payload, SizedReader};
 use crate::header;
 use crate::stream::{self, connect_test, Stream};
@@ -28,7 +27,7 @@ use crate::pool::DEFAULT_HOST;
 ///
 /// *Internal API*
 pub(crate) struct Unit {
-    pub agent: Arc<Mutex<AgentState>>,
+    pub agent: Agent,
     pub url: Url,
     pub is_chunked: bool,
     pub query_string: String,
@@ -99,7 +98,7 @@ impl Unit {
         };
 
         Unit {
-            agent: Arc::clone(&req.agent),
+            agent: req.agent.clone(),
             url: url.clone(),
             is_chunked,
             query_string,
@@ -238,8 +237,8 @@ pub(crate) fn connect(
 }
 
 #[cfg(feature = "cookie")]
-fn extract_cookies(state: &std::sync::Mutex<AgentState>, url: &Url) -> Option<Header> {
-    let state = state.lock().unwrap();
+fn extract_cookies(agent: &Agent, url: &Url) -> Option<Header> {
+    let state = agent.inner.state.lock().unwrap();
     let is_secure = url.scheme().eq_ignore_ascii_case("https");
     let hostname = url.host_str().unwrap_or(DEFAULT_HOST).to_string();
 
@@ -304,7 +303,7 @@ fn connect_socket(unit: &Unit, use_pooled: bool) -> Result<(Stream, bool), Error
         _ => return Err(Error::UnknownScheme(unit.url.scheme().to_string())),
     };
     if use_pooled {
-        let state = &mut unit.agent.lock().unwrap();
+        let state = &mut unit.agent.inner.state.lock().unwrap();
         // The connection may have been closed by the server
         // due to idle timeout while it was sitting in the pool.
         // Loop until we find one that is still good or run out of connections.
@@ -403,7 +402,7 @@ fn save_cookies(unit: &Unit, resp: &Response) {
     }
 
     // only lock if we know there is something to process
-    let state = &mut unit.agent.lock().unwrap();
+    let state = &mut unit.agent.inner.state.lock().unwrap();
     for raw_cookie in cookies.iter() {
         let to_parse = if raw_cookie.to_lowercase().contains("domain=") {
             (*raw_cookie).to_string()

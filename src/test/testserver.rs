@@ -3,6 +3,7 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
+use std::time;
 
 pub struct TestServer {
     pub port: u16,
@@ -45,7 +46,8 @@ pub fn read_headers(stream: &TcpStream) -> TestHeaders {
 impl TestServer {
     pub fn new(handler: fn(TcpStream) -> io::Result<()>) -> Self {
         let listener = TcpListener::bind("localhost:0").unwrap();
-        let port = listener.local_addr().unwrap().port();
+        let local_addr = listener.local_addr().unwrap();
+        let port = local_addr.port();
         let done = Arc::new(AtomicBool::new(false));
         let done_clone = done.clone();
         thread::spawn(move || {
@@ -57,6 +59,15 @@ impl TestServer {
             }
             println!("testserver on {} exiting", port);
         });
+        // Wait for listener to come up, to avoid race conditions leading
+        // to ConnectionRefused.
+        for _ in 1..20 {
+            let result = TcpStream::connect(local_addr);
+            if result.is_ok() {
+                break;
+            }
+            thread::sleep(time::Duration::from_millis(10));
+        }
         TestServer {
             port,
             done: done_clone,

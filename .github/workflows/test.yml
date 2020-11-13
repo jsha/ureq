@@ -26,16 +26,10 @@ jobs:
       matrix:
         tls:
           - ""
-          - tls
         feature:
-          - ""
           - json
-          - charset
-          - cookies
-          - socks-proxy
         what:
           - "--doc"
-          - "--tests"
     env:
       RUST_BACKTRACE: "1"
       RUSTFLAGS: "-D dead_code -D unused-variables -D unused"

@@ -102,7 +102,7 @@ impl TestServer {
                     break;
                 }
                 if done.load(Ordering::SeqCst) {
-                    break;
+                    println!("keeping on trucking");
                 } else {
                     thread::spawn(move || handler(stream.unwrap()));
                 }

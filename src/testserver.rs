@@ -119,6 +119,7 @@ impl TestServer {
                     _ => eprintln!("testserver: pre-connect with error {}", e),
                 }
             } else {
+                println!("successfully primed the pump");
                 break;
             }
         }

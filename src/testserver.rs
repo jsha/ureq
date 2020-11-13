@@ -91,7 +91,7 @@ pub fn read_headers(stream: &TcpStream) -> TestHeaders {
 
 impl TestServer {
     pub fn new(handler: fn(TcpStream) -> io::Result<()>) -> Self {
-        let listener = TcpListener::bind("localhost:0").unwrap();
+        let listener = TcpListener::bind("localhost:9999").unwrap();
         let port = listener.local_addr().unwrap().port();
         let done = Arc::new(AtomicBool::new(false));
         let done_clone = done.clone();

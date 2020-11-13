@@ -106,7 +106,11 @@ impl Request {
     /// # fn main() -> Result<(), ureq::Error> {
     /// # ureq::is_test(true);
     /// let r = ureq::post("http://example.com/form")
-    ///     .send_json(ureq::json!({ "name": "martin", "rust": true }))?;
+    ///     .send_json(ureq::json!({ "name": "martin", "rust": true }));
+    /// match r {
+    ///   Ok(j) => println!("{:?}", j),
+    ///   Err(e) => println!("error fetching JSON: {}", e),
+    /// };
     /// # Ok(())
     /// # }
     /// ```

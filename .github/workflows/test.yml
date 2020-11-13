@@ -50,4 +50,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: ${{ matrix.what }} --no-default-features --features "${{ matrix.tls }} ${{ matrix.feature }}"
+          args: ${{ matrix.what }} --no-default-features --features "${{ matrix.tls }} ${{ matrix.feature }}" -- --nocapture

@@ -25,6 +25,10 @@ pub(crate) fn test_agent() -> Agent {
         stream.write_all(b"\r\n")?;
         Ok(())
     });
+    println!(
+        "returning test_agent that sends everything to 127.0.0.1:{}",
+        &testserver.port
+    );
     // Slightly tricky thing here: we want to make sure the TestServer lives
     // as long as the agent. This is accomplished by `move`ing it into the
     // closure, which becomes owned by the agent.
@@ -118,6 +122,7 @@ impl TestServer {
                 break;
             }
         }
+        println!("started testserver on localhost:{}", port);
         TestServer {
             port,
             done: done_clone,

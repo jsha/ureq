@@ -109,7 +109,10 @@ impl Request {
     ///     .send_json(ureq::json!({ "name": "martin", "rust": true }));
     /// match r {
     ///   Ok(j) => println!("{:?}", j),
-    ///   Err(e) => println!("error fetching JSON: {}", e),
+    ///   Err(e) => {
+    ///     println!("error fetching JSON: {}", e);
+    ///     panic!("failure: {}", e);
+    ///   }
     /// };
     /// # Ok(())
     /// # }
